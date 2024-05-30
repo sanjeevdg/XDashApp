@@ -1,24 +1,96 @@
-import React, { useState } from 'react';
+import React, { useRef,useState,useEffect } from 'react';
 
-import {
+import {  
   SafeAreaView,Linking,StyleSheet,WebView,TextInput,Button,ScrollView,
   Text,Image,Platform,View,ActivityIndicator,FlatList,TouchableOpacity,
+  Animated, Dimensions, Easing,
 } from 'react-native';
 
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
 import Markdown from 'react-native-markdown-display';
+//import Markdown from 'markdown-to-jsx';
 import FaIcon from 'react-native-vector-icons/FontAwesome';
+//import CodeBlock from "./CodeBlock";
+import SvgArrowRight from './svgComponents/SvgArrowRight';
+import SvgSourcesIcon from './svgComponents/SvgSourcesIcon';
+import SvgAnswerIcon from './svgComponents/SvgAnswerIcon';
+import SvgRelatedIcon from './svgComponents/SvgRelatedIcon'; 
 
+
+import markdownIt from 'markdown-it';
+import highlightjs from 'markdown-it-highlightjs';
+import myhljs from 'highlight.js';
+
+//require('highlight.js/styles/dark.css'); 
+
+
+//, { MarkdownIt }
+//import Prism from 'prismjs';
+//require('./node_modules/prismjs/themes/prism-okaidia.css');
+//require('./node_modules/prismjs/components/prism-jsx.js');
+//require('./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.js');
+//require('./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css');
+
+import { hljs } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+//import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+//import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+
+import CodeBlock from './components/CodeBlock';
 
 const App = () => {
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState();
+ // const [mcodeblocks, setMCodeBlocks] = useState([]);
   const [resultsloaded, setResultsLoaded] = useState(false); 
   const [results2, setResults2] = useState([]);
+  const [results2Loaded,setResults2Loaded] = useState(false);
   const [relatedQuestions, setRelatedQuestions] = useState([]);
+  const [relatedQuestionsLoaded, setRelatedQuestionsLoaded] = useState(false);
   const [loading,setLoading] = useState(false);
+
+  const [clicked,setClicked] = useState(false);
+
+
+
+  const animatedValue = useRef(new Animated.Value(0)).current;
+    const [isTop, setIsTop] = useState(true);
+
+    const startAnimation = toValue => {
+        Animated.timing(animatedValue, {
+            toValue,
+            duration: 1000,
+            easing: Easing.linear,
+            useNativeDriver: true
+        }).start(() => {
+          //  setIsTop(!isTop);
+        })
+    }
+
+  //  useEffect(() => {
+        
+  //  }, [isTop]);
+
+    const translateY = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, Dimensions.get('window').height - 130],
+        extrapolate: 'clamp'
+    })
+
+const md = new markdownIt({
+  highlight: function (str, lang) {
+    if (lang && myhljs.getLanguage(lang)) {
+      try {
+        return myhljs.highlight(str, { language: lang, ignoreIllegals: true }).value ;
+      } catch (__) {}
+    }
+
+    return '';
+  }
+});
+
+
 
 const handleSearch = async () => {
 
@@ -43,17 +115,26 @@ const handleSearch = async () => {
         let ltdata  = response.data.substring(0,response.data.indexOf('__LLM_RESPONSE__'));
         let dtarr = JSON.parse(ltdata);
         setResults2(dtarr); 
+        setResults2Loaded(true);  
 
         console.log('REPOSNSE',response.data);
         
         let ftdata  = response.data.substring(response.data.indexOf('__LLM_RESPONSE__')+16,response.data.indexOf('__RELATED_QUESTIONS__'));
+
+/*
+let extractedBlocks = extractMarkdownContent(ftdata);
+
+console.log('myresultstringarray==',extractedBlocks);*/
         setResults(ftdata); 
-        
-        let rqdata = response.data.substring(response.data.indexOf('__RELATED_QUESTIONS__')+21,response.data.length); 
         setResultsLoaded(true);
+
+
+        let rqdata = response.data.substring(response.data.indexOf('__RELATED_QUESTIONS__')+21,response.data.length); 
+        
 
         let rqarr = JSON.parse(rqdata);
         setRelatedQuestions(rqarr);
+        setRelatedQuestionsLoaded(true);
         console.log(ftdata);
 
         }, (error) => {
@@ -103,9 +184,6 @@ const handleSearch2 = async (qr,qrhs) => {
   };
 
 
-
-
-
 const createQueryHash = () => {
     const fullHash = CryptoJS.SHA256(query).toString(CryptoJS.enc.Hex);
     return fullHash.substring(0, 21);
@@ -132,6 +210,18 @@ const setQueryAndFetchResult = (q) => {
 
 } 
 
+//  style={mdstyles}
+/*
+
+style={{
+          body: { fontSize: 16 },
+          heading1: { fontSize: 24, fontWeight: 'bold' },
+          code_block: { backgroundColor: '#282c34', borderRadius: 4, padding: 10 },
+          code_inline: { backgroundColor: '#f0f0f0', borderRadius: 4, padding: 4, fontFamily: 'monospace' },
+        }}
+
+        */
+
 const renderItem = ({ item }) => (
     <View style={styles.resultItem}>
       <Text style={styles.resultText}>{item.name}</Text> 
@@ -145,7 +235,8 @@ const renderItem = ({ item }) => (
     <SafeAreaView style={styles.container}>
 
 <Text style={{textAlign:'center',color:'white',fontSize:26,fontFamily:'Quicksand-Regular'}} >XDash AI</Text>
-      <View style={styles.searchContainer}>
+      
+      <Animated.View style={[styles.searchContainer, { transform: [{ translateY }] }]}>
 
         <TextInput placeholderTextColor={'#7e7979'}
           style={styles.input}
@@ -153,61 +244,67 @@ const renderItem = ({ item }) => (
           value={query}
           onChangeText={setQuery}
         />
-        <TouchableOpacity style={{width:50,height:50,borderRadius:25,color:'white',borderWidth:1,
+        <TouchableOpacity style={{width:50,xIndex:190,height:50,borderRadius:25,color:'white',borderWidth:1,
         justifyContent:'center',alignItems:'center' ,borderColor:'#5e5b5b',backgroundColor:'black'}}
-          onPress={() => {setLoading(true);handleSearch();} } >
+          onPress={() => {setLoading(true);handleSearch();startAnimation(isTop ? 1 : 0); setClicked(true); } } >
 
-          <FaIcon name="arrow-right" color="#5e5b5b" size={20} />
+          <SvgArrowRight style={{width: 24, zIndex:90,height: 24,color:'white'}} />
         
         </TouchableOpacity>
         
-      </View>
+      </Animated.View>
     
 
+   {!clicked && 
 <TouchableOpacity onPress={() => {setQueryAndFetchResult('Can AI be truly ethical?')}  } style={{borderWidth:1,alignSelf:'center',borderColor:'#5e5b5b',borderRadius:15,padding:5,marginBottom:6}} >
   <Text style={{fontSize:13,color:'#7e7979',fontFamily:'Quicksand-Regular'}} >Can AI be truly ethical?</Text>
 </TouchableOpacity>
-
+}
+   {!clicked && 
 <TouchableOpacity onPress={() => {setQueryAndFetchResult('What are the key obstacles to AI adoption in business?');}  } style={{borderWidth:1,alignSelf:'center',borderColor:'#5e5b5b',borderRadius:15,padding:5,marginBottom:6}} >
   <Text style={{fontSize:13,color:'#7e7979',fontFamily:'Quicksand-Regular'}} >What are the key obstacles to AI adoption in business? </Text>
 </TouchableOpacity>
-
+}
+   {!clicked && 
 <TouchableOpacity onPress={()=> setQueryAndFetchResult('How will AI affect equality in society?')} style={{borderWidth:1,alignSelf:'center',borderColor:'#5e5b5b',borderRadius:15,padding:5}} >
   <Text style={{fontSize:13,color:'#7e7979',fontFamily:'Quicksand-Regular'}} >How will AI affect equality in society?</Text>
 </TouchableOpacity>
-
+}
 
 
       <ScrollView style={styles.resultsContainer}>
 
         {loading && <ActivityIndicator style={{zIndex:99}} size={30} color={'#47cf54'}/>}
-{resultsloaded?(<View style={{flexDirection:'row'}} >
-<Image resizeMode="contain" 
-  source={require('./assets/images/answer.png')} />
+{resultsloaded?(<View style={{flexDirection:'row',alignItems:'center'}} >
+<SvgAnswerIcon style={{width: 24, height: 24,color:'white'}} />
 
   <Text style={{color:'white',fontWeight:'bold',
   fontSize:25}} >Answer</Text>   
+  
 </View>
 ):(<></>) }
 
-        {results ? (
-         <Markdown style={mdstyles}>{results}</Markdown> 
-        ) : (
-          <Text>No results found</Text>
-        )}
+
+{/* */}{/*   */}
+
+         { resultsloaded?   (             
+        
+          <Markdown allowDangerousHtml={false} escapeHtml={false} style={mdstyles} > 
+         { results}
+                    </Markdown>
+        
+        ):(<></>) }
 
 
 
-{resultsloaded?(<View style={{flexDirection:'row'}} >
-<Image resizeMode="contain" 
-  source={require('./assets/images/sources.png')} />
-
+{resultsloaded?(<View style={{flexDirection:'row',alignItems:'center'}} >
+<SvgSourcesIcon style={{width: 24, height: 24,color:'white'}} />
   <Text style={{color:'white',fontWeight:'bold',
   fontSize:25}} >Sources</Text>
 </View>
 ):(<></>)}
       <View>
-         {results2.map((item, index) => { return (
+         {results2Loaded? results2.map((item, index) => { return (
           <View key={index} style={styles.itemContainer}>
   
      
@@ -223,16 +320,15 @@ alignSelf:'flex-start'}} onPress={() => Linking.openURL(item.url)}>
 </View>
   <Text style={styles.itemSnippet}>{item.snippet.substring(0,100)}</Text>
           </View>
-        )})}
+        )}):(<></>)}
       </View>
 
       <View style={{marginTop:20}} >
 
 
     
-{resultsloaded? (<View style={{flexDirection:'row'}} >
-<Image resizeMode="contain"
-  source={require('./assets/images/related.png')} />
+{relatedQuestionsLoaded? (<View style={{flexDirection:'row',alignItems:'center'}} >
+<SvgRelatedIcon style={{width: 24, height: 24,color:'white'}} />
  
   <Text style={{color:'white',fontWeight:'bold',
   fontSize:25}} >Related</Text>   
@@ -240,7 +336,7 @@ alignSelf:'flex-start'}} onPress={() => Linking.openURL(item.url)}>
 ):(<></>)}
 
 
-         {relatedQuestions.map((item, index) => { 
+         {relatedQuestionsLoaded? relatedQuestions.map((item, index) => { 
           return (
 <TouchableOpacity  onPress={() => {setQueryAndFetchResult(item.question)}  } key={index}> 
           <View  style={styles.itemContainer}>
@@ -253,7 +349,7 @@ alignSelf:'flex-start'}} onPress={() => Linking.openURL(item.url)}>
     borderBottomWidth: StyleSheet.hairlineWidth,
   }}
 /></TouchableOpacity>
-        )})}
+        )}):(<></>)}
 
       </View>
 
@@ -371,9 +467,9 @@ const mdstyles = StyleSheet.create({
     }),
   },
   code_block: {
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#f5f5f5',
+/*    borderWidth: 1,
+    borderColor: '#CCCCCC', */
+    backgroundColor: '#F5F5F5',
     padding: 10,
     borderRadius: 4,
     ...Platform.select({
@@ -386,9 +482,10 @@ const mdstyles = StyleSheet.create({
     }),
   },
   fence: {
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    backgroundColor: '#f5f5f5',
+    /*borderWidth: 1,
+    borderColor: '#000000',  */
+    backgroundColor: 'rgb(40, 42, 54)',
+    color:'white',
     padding: 10,
     borderRadius: 4,
     ...Platform.select({
@@ -482,9 +579,11 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flexDirection: 'row',
+    zIndex:90,
     alignItems: 'center',
-    marginTop:15,
+    marginTop:20,
     marginBottom: 16,
+    backgroundColor:'#000000',
   },
   itemName: {
     color:'white',
@@ -508,9 +607,11 @@ alignSelf:'flex-start',justifyContent:'flex-start',marginLeft: 'auto'},
     paddingHorizontal: 8,
     marginRight: 8,
     color:'white',
+    zIndex:90,
   },
   resultsContainer: {
     flex: 1,marginBottom:50,
+    marginTop:-80,
   },
   resultItem: {
     padding: 16,
