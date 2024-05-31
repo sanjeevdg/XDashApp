@@ -1,11 +1,11 @@
 import React, { useRef,useState,useEffect } from 'react';
 
 import {  
-  SafeAreaView,Linking,StyleSheet,WebView,TextInput,Button,ScrollView,
+  SafeAreaView,Linking,StyleSheet,TextInput,Button,ScrollView,
   Text,Image,Platform,View,ActivityIndicator,FlatList,TouchableOpacity,
   Animated, Dimensions, Easing,
 } from 'react-native';
-
+import LottieSplashScreen from "react-native-lottie-splash-screen";
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
 import Markdown from 'react-native-markdown-display';
@@ -19,20 +19,19 @@ import SvgRelatedIcon from './svgComponents/SvgRelatedIcon';
 
 
 import markdownIt from 'markdown-it';
-import highlightjs from 'markdown-it-highlightjs';
-import myhljs from 'highlight.js';
-
+import myhljs from 'highlight.js/lib/core';
+import javascript from 'highlight.js/lib/languages/javascript';
 //require('highlight.js/styles/dark.css'); 
-
-
-//, { MarkdownIt }
+import Prism from "prismjs";
+//require("prismjs/components/prism-jsx");
+//, { MarkdownIt }s
 //import Prism from 'prismjs';
 //require('./node_modules/prismjs/themes/prism-okaidia.css');
 //require('./node_modules/prismjs/components/prism-jsx.js');
 //require('./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.js');
 //require('./node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css');
 
-import { hljs } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { coy } from 'react-syntax-highlighter/dist/esm/styles/prism';
 //import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 //import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 
@@ -52,10 +51,14 @@ const App = () => {
 
   const [clicked,setClicked] = useState(false);
 
-
-
   const animatedValue = useRef(new Animated.Value(0)).current;
     const [isTop, setIsTop] = useState(true);
+
+
+  useEffect(() => {
+    LottieSplashScreen.hide(); // here
+  }, []);
+
 
     const startAnimation = toValue => {
         Animated.timing(animatedValue, {
@@ -68,24 +71,30 @@ const App = () => {
         })
     }
 
-  //  useEffect(() => {
-        
-  //  }, [isTop]);
 
     const translateY = animatedValue.interpolate({
         inputRange: [0, 1],
         outputRange: [0, Dimensions.get('window').height - 130],
         extrapolate: 'clamp'
     })
+//const md = markdownIt().use(highlightjs);
 
 const md = new markdownIt({
   highlight: function (str, lang) {
-    if (lang && myhljs.getLanguage(lang)) {
+    if (lang && Prism.languages[lang] && (lang!=='markdown')) {
+      console.log('mylang--',lang);
+      console.log('mylang222---',myhljs.getLanguage(lang));
+     // myhljs.registerLanguage('javascript', javascript);
+let hl;
       try {
-        return myhljs.highlight(str, { language: lang, ignoreIllegals: true }).value ;
-      } catch (__) {}
+        return Prism.highlight(str, Prism.languages[lang]) ;
+      } catch (error) { 
+        console.error(error);
+      hl = md.utils.escapeHtml(str);
+      }
     }
 
+  //  return `<pre class="language-${lang}"><code class="language-${lang}">${hl}</code></pre>`;
     return '';
   }
 });
@@ -285,13 +294,16 @@ const renderItem = ({ item }) => (
 ):(<></>) }
 
 
-{/* */}{/*   */}
+{/* */}{/* renderers={{ code_block: CodeBlock }} style={prism} md.render( style={coy}  allowDangerousHtml={false} escapeHtml={false} */}
+ {/*   */}
+   {/*     contentWidth={Dimensions.get('window').width}  style={mdstyles}    </Markdown>*/}
 
          { resultsloaded?   (             
         
-          <Markdown allowDangerousHtml={false} escapeHtml={false} style={mdstyles} > 
-         { results}
-                    </Markdown>
+       <Markdown escapeHtml={true} >
+         
+        {md.render(results)}
+       </Markdown>
         
         ):(<></>) }
 

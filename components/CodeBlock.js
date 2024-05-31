@@ -9,10 +9,11 @@ class CodeBlock extends PureComponent {
     language: PropTypes.string
   };
 
+
   static defaultProps = {
     language: null
   };
-console.log('am niin code block');
+
   render() {
     const { language, value } = this.props;
     return (
