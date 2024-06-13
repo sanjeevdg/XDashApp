@@ -3,7 +3,7 @@ import React, { Fragment, useRef,useState,useEffect,useCallback } from 'react';
 import {  
   SafeAreaView,Linking,StyleSheet,TextInput,Button,ScrollView,
   Text,Image,Platform,View,ActivityIndicator,FlatList,TouchableOpacity,
-  Animated, Dimensions, Easing, Keyboard,
+  Animated, Dimensions, Easing, Keyboard, LogBox
 } from 'react-native';
 
 import LottieSplashScreen from "react-native-lottie-splash-screen";
@@ -14,9 +14,9 @@ import { WebView } from 'react-native-webview';
 import FaIcon from 'react-native-vector-icons/FontAwesome';
 
 import SvgArrowRight from './svgComponents/SvgArrowRight';
-import SvgSourcesIcon from './svgComponents/SvgSourcesIcon';
+//import SvgSourcesIcon from './svgComponents/SvgSourcesIcon';
 import SvgAnswerIcon from './svgComponents/SvgAnswerIcon';
-import SvgRelatedIcon from './svgComponents/SvgRelatedIcon'; 
+//import SvgRelatedIcon from './svgComponents/SvgRelatedIcon'; 
 
 import RenderHtml from 'react-native-render-html';
 
@@ -77,8 +77,11 @@ const injectedJavaScript2=`
 
   useEffect(() => {
     LottieSplashScreen.hide();
-    console.disableYellowBox = true; // here
+    LogBox.ignoreAllLogs();
   }, []);
+
+//LogBox.ignoreLogs(['Warning: ...']); // Ignore log notification by message
+//Ignore all log notifications
 
 //style="background-color:#232222;border-radius:20px;margin-top:10px;margin-bottom:5px;padding:10;'
 /*
@@ -127,7 +130,7 @@ const pickRandomElements = (array, count) => {
       return shuffled.slice(0, count);
     };
 const mytopthree = pickRandomElements(topQueries, 3);
-console.log('TOPTHERE==',topthree);
+console.log('TOPTHERE==',mytopthree);
 setTopThree(mytopthree);
 setTopThreeLoaded(true);
 
@@ -416,7 +419,8 @@ const md2 = markdownit({
     try {
       if ( !(lang === 'undefined')   || (lang !== 'markdown')) {
         if(lang === 'jsx')  lang = 'javascript';
-        if((lang === 'undefined') || (lang === 'markdown')) lang = 'javascript';
+        if(lang === 'undefined') lang = 'javascript';
+        if (lang === 'null') lang = 'javascript';
       hl = Prism.highlight(str, Prism.languages[lang]);
       setHtmlStringLoaded(true);
       }
