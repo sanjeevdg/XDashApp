@@ -3,7 +3,7 @@ import React, { Fragment, useRef,useState,useEffect,useCallback } from 'react';
 import {  
   SafeAreaView,Linking,StyleSheet,TextInput,Button,ScrollView,
   Text,Image,Platform,View,ActivityIndicator,FlatList,TouchableOpacity,
-  Animated, Dimensions, Easing, Keyboard, LogBox
+  Animated, Dimensions, Easing, Keyboard, LogBox,KeyboardAvoidingView
 } from 'react-native';
 
 import { WebView } from 'react-native-webview';
@@ -14,7 +14,7 @@ import markdownit from 'markdown-it';
 import SvgArrowRight from './svgComponents/SvgArrowRight';
 import SvgAnswerIcon from './svgComponents/SvgAnswerIcon';
 import MenuIcon from './svgComponents/MenuIcon';
-
+import { useIsFocused } from "@react-navigation/native";
 import Prism from "prismjs";
 
 import { topQueries } from './topQueries';
@@ -33,17 +33,19 @@ const HistoryScreen = ({route, navigation}) => {
   const [relatedQuestionsLoaded, setRelatedQuestionsLoaded] = useState(false);
   const [loading,setLoading] = useState(false);
 
-
-const {query, queryResponse}  = route.params;
-
+let {query} = route.params;
+let {queryResponse} = route.params;
+//{query, queryResponse}  = ;
 
 console.log('route-params',route.params);
 
 console.log('passedQuery',query);
 
 
-const webViewRef = useRef();
 
+const webViewRef = useRef();
+let isFocused = false;
+//useIsFocused();
 
 const answerRef = React.createRef();
 const sourcesRef = React.createRef();
@@ -57,91 +59,44 @@ const [htmlStringLoaded,setHtmlStringLoaded] = useState(false);
 const [topthree,setTopThree] = useState([]);
 const [topthreeloaded,setTopThreeLoaded] = useState(false);
 
+const [myquery, setMyQuery] = useState('');
+
+
   const [clicked,setClicked] = useState(false);
 
-  const animatedValue = useRef(new Animated.Value(0)).current;
+//  const animatedValue = useRef(new Animated.Value(0)).current;
 
     const [isTop, setIsTop] = useState(true);
 
-
-useEffect(() => {
-
-async function clearStore() {
-try {
-await remove_history_items_from_async_storage();
-
-}
-catch(e) { console.log('error at clearstore',e);}
-
-}
-//clearStore();
-}, []);
-
-
-const md2 = markdownit({
-    highlight(str, lang) {
-    let hl;
-//console.log('prism-langsfor jsx==',Prism.languages['javascript']);
-    //lang !== 'markdown' &&
-    try {
-      if ( !(lang === 'undefined')   || (lang !== 'markdown')) {
-        if(lang === 'jsx')  lang = 'javascript';
-        if(lang === 'undefined') lang = 'javascript';
-        if (lang === 'null') lang = 'javascript';
-      hl = Prism.highlight(str, Prism.languages[lang]);
-      }
-    } catch (error) {
-      console.error(error);
-      hl = md2.utils.escapeHtml(str);
-    }
-console.log('transformed markdown==',hl);
-console.log('language passed',lang);
-
-    return `<pre class="line-numbers language-${lang}"><code class="language-${lang}">${hl}</code></pre>`;
-  },
-  typographer:true,
-});
-
-
+isFocused = !!isFocused;
 
 
 useEffect(() => {
 
 
-console.log('qres',queryResponse);
+async function initstr() {
 
-let qrr = [];
 try {
-  qrr = destr(queryResponse);
-}
 
-catch(e) {console.log('error parsing--',e)}
-
+let  qrr = JSON.parse(queryResponse);
 console.log('PARSED-QRR==',qrr);
 
-setResults(qrr[0].text);
-setResultsLoaded(true);
-//setResults2(JSON.parse(qrr[1].text));
-setResults2Loaded(true);
+//setResults(qrr[0].text);
+//setResultsLoaded(true);
 
+//setResults2(qrr[1].text);
+//setRelatedQuestions(qrr[2].text);
 
-//setRelatedQuestions(JSON.parse(qrr[2].text));
-setRelatedQuestionsLoaded(true);
+//setRelatedQuestionsLoaded(true);
+// setResults2Loaded(true);
+//<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css" rel="stylesheet" />
 
-const myRelatedQuestions = () => {
-
- return qrr[2].text;
-};
-
-
- const newSources = () => {
-    return qrr[1].text;
-};
-
-let hstr = '';
-if (resultsloaded){
+//let hstr = '';
 //  str = md2.render(results);
-hstr = `
+//<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-darcula.min.css" integrity="sha512-K5Xw18pkHMgNX5vlIERxh6YIuU6AiTUUE+yXZAartEQi5dWOjnoVjldVw9hU60zbgxz/Hh/JR9gJ49xf+LG0Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+let hstr = `
 <!DOCTYPE html>
   <html lang="en" data-bs-theme="dark">
   <head>
@@ -150,16 +105,27 @@ hstr = `
    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 
-    
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/c6435311fd.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/dracula-prism/dist/css/dracula-prism.css">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/line-numbers/prism-line-numbers.min.css"></link>    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Quicksand">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+
+
+
     <style>
           body { background-color: black; color: white;margin:0 auto; margin-bottom:60;bg-color:'#000000';
           font-size: 80%;font-family:Quicksand; }
           p {margin-left:5px;}
           pre {margin-left:5px;}
-
+         h1 {font-size:60px;}   
+          h2 {font-size:50px;}   
+          h3 {font-size:40px;}  
+          h4 {font-size:30px;}  
 
 code[class*="language-"],
 pre[class*="language-"] {
@@ -275,45 +241,38 @@ pre[class*="language-"] {
     font-size: 16px;
   }
 }
-   .ui-dialog {
 
-    border-width:3px;
-    border-style:solid;
-    border-radius:30px;
-    background: rgb(107 114 128);
-
-
- }
-
-.rounded-corners .ui-corner-all {
-    border-radius: 30px;
-    color: rgb(107 114 128);
-}
-
-.ui-widget-header {
-    background: rgb(107 114 128);
-    font-weight: normal;
-}
-
-.ui-widget-header .ui-button {
-    width: 50px;
-    height: 50px;
-}
-
-
-.close-resize .ui-dialog-titlebar-close .ui-icon-closethick {
-  width: 50px !important;
-    height: 50px !important;
-
-}
- 
- 
-.ui-icon-closethick {
-  -ms-transform: scale(2); /* IE 9 */
-  -webkit-transform: scale(2); /* Chrome, Safari, Opera */
-  transform: scale(2);
-}
   
+
+.modal {
+  width:100% !important;
+  max-width:100% !important;
+  border-width:7px;
+  border-color:rgb(113 113 122);
+  border-radius:20px;
+  border-style:solid;
+}
+
+
+.qheader {
+    padding: 2px;
+    cursor: pointer;
+    font-weight: bold;
+    clear:both;
+    background-color: '#000';
+    color:'#fff';
+
+}
+#answer {
+    display: block;
+    padding : 5px;
+}
+.close-modal {
+  width: 50px !important;
+  height: 50px !important;
+  margin-top:10px;
+  margin-right:10px;
+}
 
         </style>
 
@@ -321,6 +280,9 @@ pre[class*="language-"] {
 
   </head>
   <body class="line-numbers" style="font-size: 50px">
+  <div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0&appId=1169474053825828" nonce="qRM9RQDb"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Function to send message to React Native
@@ -350,97 +312,123 @@ const sendMessageToRN = (message: Message) => {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/line-numbers/prism-line-numbers.js"></script>
- ` + results  + `<br><br><div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'><svg xmlns="http://www.w3.org/2000/svg" width="50" 
+
+
+
+
+
+<div class="qheader"> <p style="font-size:50px;font-family:'Quicksand-SemiBold';">`
++
+query.substring(0,100)
++
+`<i class="fa fa-angle-down" style="float:right;" data-toggle="collapse" href="#collapse1" class="collapsed" aria-expanded="false"></i>
+</p></div><div>`+ query.substring(150,query.length) +`</div> 
+
+
+<div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'>
+  <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+<h3 class='display-2 fw-bold'>&nbsp;Answer</h3></div>  
+
+<div class="answer">`; 
+
+
+if (qrr[0].text === '' || qrr[0].text === 'undefined')  {
+  hstr += `<dotlottie-player src="https://lottie.host/7e5fa803-37fa-49e7-b2ac-fb914ab89fb3/QOgqPILnK3.json" background="transparent" speed="1" style="width: 300px; height: 300px;" direction="1" playMode="normal" loop autoplay></dotlottie-player>`;
+}
+
+else hstr += qrr[0].text;
+
+
+hstr += `</div><br><br><div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'><svg xmlns="http://www.w3.org/2000/svg" width="50" 
 height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scroll-text "><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 
-0V5a2 2 0 1 0-4 0v3h4"></path><path d="M19 17V5a2 2 0 0 0-2-2H4"></path><path d="M15 8h-5"></path><path d="M15 12h-5"></path></svg>&nbsp;<h2 class='display-2 fw-bold'>Sources</h2></div><br/>`
- + newSources() + `<hr style='height:5px'><br><div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'>
+0V5a2 2 0 1 0-4 0v3h4"></path><path d="M19 17V5a2 2 0 0 0-2-2H4"></path><path d="M15 8h-5"></path><path d="M15 12h-5"></path></svg>&nbsp;<h3 class='display-2 fw-bold'>Sources</h3></div><br/>`;
+
+
+if (qrr[1].text === '' || qrr[1].text === 'undefined')  {
+  hstr += `<dotlottie-player src="https://lottie.host/7e5fa803-37fa-49e7-b2ac-fb914ab89fb3/QOgqPILnK3.json" background="transparent" speed="1" style="width: 300px; height: 300px;" direction="1" playMode="normal" loop autoplay></dotlottie-player>`;
+}
+
+else hstr += qrr[1].text;
+
+
+ hstr += `<hr style='height:5px'><br><div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'>
 <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot-message-square "><path d="M12 6V2H8"></path><path d="m8 18-4 4V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z"></path><path d="M2 12h2"></path><path d="M9 11v2"></path><path d="M15 11v2"></path><path d="M20 12h2"></path></svg>
-&nbsp;<h2 class='display-2 fw-bold'>Related</h2></div>
-` + myRelatedQuestions() +
-  `</body>
-  </html>
-  ` ;
+&nbsp;<h3 class='display-2 fw-bold'>Related</h3></div>
+`;
+
+if (qrr[2].text === '' || qrr[2].text === 'undefined')  {
+  hstr += `<dotlottie-player src="https://lottie.host/7e5fa803-37fa-49e7-b2ac-fb914ab89fb3/QOgqPILnK3.json" background="transparent" speed="1" style="width: 300px; height: 300px;" direction="1" playMode="normal" loop autoplay></dotlottie-player>`;
+}
+
+else hstr += qrr[2].text;
+
+
+ hstr += `<script>
+$( document ).ready(function() {
   
+  $("#mycopybtn").click(function(){
+      $("#mysharebtnspan").text('copied!');
+          setTimeout(function(){
+              $('#mysharebtnspan').text('');
+          }, 2000);
+
+
+  });
+
+$(".qheader").click(function () {
+
+    $header = $(this);
+    //getting the next element
+    $content = $header.next();
+    //open up the content needed - toggle the slide- if visible, slide up, if not slidedown.
+    $content.slideToggle(500, function () {
+        //execute this after slideToggle is done
+        //change text of header based on visibility of content div
+        $header.text(function () {
+            //change text based on condition
+          //  return $content.is(":visible") ? "Collapse" : "Expand";
+        });
+    });
+
+});
+
+$(".fa").on("click",function(){
+   $(this).toggleClass("fa-angle-up");
+   $(this).toggleClass("fa-angle-down");
+});
+
+  console.log( "ready!" );
+  FB.init({
+ appId: 'YOUR_APP_ID',
+ version: 'v10.0',
+});
+
+});
+
+function shareOnFacebook() {
+ FB.ui({
+ method: 'share',
+ href: 'https://www.xdash.ai',
+ }, function(response){});
+}
+
+</script>  
+
+</body>
+  </html>` ;
 setHtmlString(hstr); 
 setHtmlStringLoaded(true);
 
+  }
 
-    
-
-};
-
-}, [query,results,resultsloaded,results2,results2Loaded,relatedQuestions,relatedQuestionsLoaded,htmlString,htmlStringLoaded]);
-
-
-const getStreamData = (myqry) => {
-  
-  //setQuery('');
-let newqry = myqry.replace("'",'');
-console.log('newqry',newqry);
-
-    const injectScript = `
-    (async()=>{      
-      const postMessage = window.ReactNativeWebView.postMessage;     
-      const response = await fetch('http://192.168.100.83:5000/queryXdashApi', {
-          method: 'POST',
-          headers: {
-          'Content-Type': 'application/json',  
-          responseType: 'stream',
-         }, 
-      body:JSON.stringify({query: '${newqry}' })
-    });
-
-      async function *streamAsyncIterable(stream) {
-          const reader = stream.getReader()
-          try {
-              while (true) {
-                  const {done, value} = await reader.read()
-                  if (done) {
-                      return
-                  }
-                  yield value
-              }
-          } finally {
-              reader.releaseLock()
-          }
-      }
-
-      for await(const chunk of streamAsyncIterable(response?.body)) {
-          const str = new TextDecoder().decode(chunk);
-        
-      
-      let jobj = [{type:'answer',text:''},{type:'sources',text:''},{type:'related',text:''}];
-      //;
-      
-        try {
-          jobj = JSON.parse(str);
-      } catch (e) { alert('error parsing...'+str); }
-        //alert('jobj='+jobj.type);
+catch(e) {console.log('error parsing--',e)}
 
 
 
-         if (jobj[0].type==='answer') {
+}
 
-          const answerjs = document.getElementById('answer').innerHTML=jobj[0].text;
-          }
-         if (jobj[1].type==='sources'){
-          const sourcesjs = document.getElementById('sources').innerHTML=jobj[1].text;
-
-          }
-         if (jobj[2].type==='related'){
-          const relatedjs = document.getElementById('related').innerHTML=jobj[2].text;
-        }
-         
-         window.ReactNativeWebView.postMessage(JSON.stringify({type: "updateHtml" ,query:'${newqry}' ,queryResponse : str}));
-      }
-    })();    
-    `;
-
-    webViewRef?.current?.injectJavaScript(injectScript);
-   // setQuery('');
-  //  webViewRef?.current?.reload();
-  };
-
+initstr();
+}, [isFocused,query,queryResponse,htmlString,htmlStringLoaded]);
 
 
  function LoadingIndicatorView() {
@@ -448,35 +436,7 @@ console.log('newqry',newqry);
     return <ActivityIndicator color='#009b88' size='large' />
   }
 
-    const startAnimation = toValue => {
-        Animated.timing(animatedValue, {
-            toValue,
-            duration: 1000,
-            easing: Easing.linear,
-            useNativeDriver: true
-        }).start(() => {
-          //  setIsTop(!isTop);
-
-        })
-    }
-const startAnimation2 = toValue => {
-        Animated.timing(animatedValue, {
-            toValue,
-            duration: 1000,
-            easing: Easing.linear,
-            useNativeDriver: true
-        }).start(() => {
-          //  setIsTop(!isTop);
-
-        })
-    }
-    const translateY = animatedValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, Dimensions.get('window').height - 110],
-        extrapolate: 'clamp'
-    })
-
-
+    
 onWebViewMessage = (event: WebViewMessageEvent) => {
     setWebViewHeight(Number(event.nativeEvent.data))
   }
@@ -488,19 +448,6 @@ onWebViewMessage = (event: WebViewMessageEvent) => {
     }
   };
 
-useEffect(() => {
-
-const pickRandomElements = (array, count) => {
-      const shuffled = array.sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, count);
-    };
-const mytopthree = pickRandomElements(topQueries, 3);
-console.log('TOPTHERE==',mytopthree);
-setTopThree(mytopthree);
-setTopThreeLoaded(true);
-
-
-}, [])
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -566,7 +513,8 @@ console.log('my-message-type==>>',message.type);
     let newq = text.replace("'",'') ;
    // setQuery(newq); 
     console.log('newq=',newq);
-    sleep(500).then(() => { getStreamData(newq); });
+    //getStreamData(newq); 
+    navigation.navigate('Search',{xquery:newq} );
     webViewRef?.current.reload();
   };
 
@@ -582,32 +530,39 @@ console.log('my-message-type==>>',message.type);
     })();
   `;
 //injectedJavaScript={injectedJavaScript} 
+  /*
+
+{htmlStringLoaded && <View style={{display:'flex',marginTop:0,width:'100%',flexDirection:'row',backgroundColor:'black',alignSelf:'flex-start',alignItems:'center',justifyContent:'flex-start'}} >
+<SvgAnswerIcon style={{width: 24, height: 24,color:'white'}} />
+
+  <Text style={{color:'white',fontWeight:'normal',fontSize:32}} >Answer</Text>   
+  
+</View> }
+  */
 
 function displaySpinner() {
   return (
-     <View style={styles.indicatorWrapper}>
+     <View style={[ styles.indicatorWrapper,{marginTop:-1000,flex:1,flexGrow:1}]}>
       <ActivityIndicator size="large" style={styles.indicator}/>
       <Text style={styles.indicatorText}>Loading response...</Text>
     </View>
   );
 }
 
+//setAnswerContent('');setSourcesContent('');setRelatedContent('');   loadHtml(); setHtmlStringLoaded(true);setLoading(false); setCurrQuery(query); setClicked(true);Keyboard.dismiss();
 
   return (
-   <React.Fragment >
-   	 <View style={{paddingTop:300,display:'flex',flexDirection:'row',justifyContent:'center',alignSelf:'center',paddingTop:10,paddingBottom:5,backgroundColor:'black',width:'100%'}} >
-<MenuIcon onPress={()=> navigation.openDrawer() } style={{position:'absolute',left:7,top:7, width: 22, height: 22,marginLeft:10,marginTop:8}} />
-<Text style={{marginBottom:10,textAlign:'center',alignSelf:'center',color:'white',fontSize:23,fontFamily:'Quicksand-SemiBold'}} >xdash ai</Text>
 
+   <View style={{flex:1,marginTop:0}} >
+   	
+     <View style={{display:'flex',flexDirection:'row',justifyContent:'center',alignSelf:'center',paddingTop:10,paddingBottom:5,backgroundColor:'black',width:'100%'}} >
+<MenuIcon onPress={()=> navigation.openDrawer() } style={{position:'absolute',left:7,top:7, width: 22, height: 22,marginLeft:10,marginTop:8}} />
+<View style={{width:150,alignSelf:'center',marginTop:-5}} >
+<Text style={{textAlign:'center',alignSelf:'center',color:'white',fontSize:23,fontFamily:'Quicksand-SemiBold'}} >xdash.ai</Text>
+</View>
 </View>      
       
-
-{htmlStringLoaded && <View style={{display:'flex',marginTop:-57,width:'100%',flexDirection:'row',backgroundColor:'black',alignSelf:'flex-start',alignItems:'center',justifyContent:'flex-start'}} >
-<SvgAnswerIcon style={{width: 24, height: 24,color:'white'}} />
-
-  <Text style={{color:'white',fontWeight:'normal',fontSize:32}} >Answer</Text>   
-  
-</View> }
+<View style={{flex:1,marginTop:-4,marginBottom:-55}} >
 
 { htmlStringLoaded && (
       
@@ -617,15 +572,38 @@ function displaySpinner() {
           scalesPageToFit={true}
           startInLoadingState={true}                 
           onMessage={handleMessage}
+          injectedJavaScript={injectedJavaScript} 
           javaScriptEnabled={true}
-          renderLoading={() => {  displaySpinner(); }}
+          renderLoading={() => displaySpinner() }
           domStorageEnabled={true}
           style={{flexGrow:1,height:600,marginTop:0,paddingTop:5,marginBottom:40,fontSize:15}}        
 ></WebView>
 
         )}
-       
- </React.Fragment>
+   
+</View>
+<KeyboardAvoidingView style={[styles.searchContainer ]} keyboardVerticalOffset={80} >
+ 
+
+        <TextInput placeholderTextColor={'#7e7979'}
+          style={styles.input}
+          placeholder="Ask XDash AI anything..."
+          value={myquery}
+          id='myQuery'
+          onChangeText={setMyQuery}          
+        />
+        <TouchableOpacity style={{width:50,xIndex:190,height:50,borderRadius:25,color:'white',borderWidth:1,
+        justifyContent:'center',alignItems:'center' ,borderColor:'#5e5b5b',backgroundColor:'black'}}
+          onPress={() => { navigation.navigate('Search',{xquery:myquery} )  } } >
+
+          <SvgArrowRight style={{width: 24, zIndex:90,height: 24,color:'white'}} />
+        
+        </TouchableOpacity>
+        
+      </KeyboardAvoidingView>
+
+
+ </View>
 
 
   );

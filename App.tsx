@@ -1,11 +1,15 @@
 import React, { useState,useEffect } from 'react';
 
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer,DefaultTheme } from '@react-navigation/native';
 import LottieSplashScreen from "react-native-lottie-splash-screen";
 
 import SearchScreen from './src/SearchScreen';
 import HistoryScreen from './src/HistoryScreen';
+import LandingScreen from './src/LandingScreen';
+
+
+import {View} from 'react-native';
 
 import {LogBox,Dimensions} from 'react-native';
 import CustomDrawer from './src/CustomDrawer';
@@ -27,10 +31,21 @@ const Drawer = createDrawerNavigator();
 // injectedJavaScript={}       setLoading(true);
 
 
-
+const theme = {
+  ...DefaultTheme,  
+     colors
+: {
+    ...DefaultTheme.colors,    
+    background: 'black',
+  },
+  dark:true,
+}
+//{ colors: { backgroundColor: '#000' } }
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Drawer.Navigator 
+    <NavigationContainer ref={navigationRef} theme={theme}>
+      
+      <Drawer.Navigator
+        detachInactiveScreens={false} 
         screenOptions={{
         drawerStyle: {
         backgroundColor: '#000',
@@ -39,6 +54,7 @@ const Drawer = createDrawerNavigator();
             }}
 
         drawerContent={props => <CustomDrawer {...props} />}>
+        <Drawer.Screen options={{headerShown: false}}  name="Landing" component={LandingScreen} />
         <Drawer.Screen options={{headerShown: false}}  name="Search" component={SearchScreen} />
         <Drawer.Screen options={{headerShown: false}}  name="History" component={HistoryScreen} />
       </Drawer.Navigator>

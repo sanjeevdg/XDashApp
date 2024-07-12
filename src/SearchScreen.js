@@ -3,17 +3,17 @@ import React, { Fragment, useRef,useState,useEffect,useCallback } from 'react';
 import {  
   SafeAreaView,Linking,StyleSheet,TextInput,Button,ScrollView,
   Text,Image,Platform,View,ActivityIndicator,FlatList,TouchableOpacity,
-  Animated, Dimensions, Easing, Keyboard, LogBox
+  Animated, Dimensions, Easing, Keyboard, LogBox, KeyboardAvoidingView
 } from 'react-native';
 
 
 import { WebView } from 'react-native-webview';
 import FaIcon from 'react-native-vector-icons/FontAwesome';
-
+import markdownit from 'markdown-it';
 import SvgArrowRight from './svgComponents/SvgArrowRight';
 import SvgAnswerIcon from './svgComponents/SvgAnswerIcon';
 import MenuIcon from './svgComponents/MenuIcon';
-
+import CryptoJS from 'crypto-js';
 import Prism from "prismjs";
 import destr from 'destr';
 import { topQueries } from './topQueries';
@@ -21,7 +21,7 @@ import {save_history_item_to_async_storage,remove_history_items_from_async_stora
 
 import Clipboard from '@react-native-community/clipboard';
 
-const SearchScreen = ({ navigation}) => {
+const SearchScreen = ({ route, navigation}) => {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState();
@@ -35,6 +35,7 @@ const SearchScreen = ({ navigation}) => {
 
   const [question, setQuestion] = useState('');
 const webViewRef = useRef();
+  
 
 
 const origmarkRef = useRef();
@@ -68,6 +69,25 @@ const [topthreeloaded,setTopThreeLoaded] = useState(false);
     const [isTop, setIsTop] = useState(true);
   
 
+const {xquery} = route.params;
+
+const [currquery,setCurrQuery] = useState(xquery);
+
+
+useEffect(() => { 
+
+setCurrQuery(route.params.xquery);
+setAnswerContent('');
+setRelatedContent('');
+setSourcesContent('');
+
+}, [route.params?.xquery] );
+// <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+//<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-darcula.min.css" integrity="sha512-K5Xw18pkHMgNX5vlIERxh6YIuU6AiTUUE+yXZAartEQi5dWOjnoVjldVw9hU60zbgxz/Hh/JR9gJ49xf+LG0Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+//<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+//<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-darcula.min.css" integrity="sha512-K5Xw18pkHMgNX5vlIERxh6YIuU6AiTUUE+yXZAartEQi5dWOjnoVjldVw9hU60zbgxz/Hh/JR9gJ49xf+LG0Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
 const loadHtml = () => { 
 
 let myhstr =`<!DOCTYPE html>
@@ -78,7 +98,11 @@ let myhstr =`<!DOCTYPE html>
    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 <script src="https://use.fontawesome.com/c6435311fd.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+
+<link rel="stylesheet" href="https://unpkg.com/dracula-prism/dist/css/dracula-prism.css">
+
+   
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.22.0/plugins/line-numbers/prism-line-numbers.min.css"></link>    
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Quicksand">
     
@@ -92,6 +116,11 @@ let myhstr =`<!DOCTYPE html>
           font-size: 90%;font-family:Quicksand; }
           p {margin-left:5px;}
           pre {margin-left:5px;}
+          h1 {font-size:60px;}   
+          h2 {font-size:50px;}   
+          h3 {font-size:40px;}  
+          h4 {font-size:30px;}  
+
 
 
 code[class*="language-"],
@@ -210,44 +239,6 @@ pre[class*="language-"] {
 }
 
 
- .ui-dialog {
-
-    border-width:3px;
-    border-style:solid;
-    border-radius:30px;
-    background: rgb(107 114 128);
-
-
- }
-
-.rounded-corners .ui-corner-all {
-    border-radius: 30px;
-    color: rgb(107 114 128);
-}
-
-.ui-widget-header {
-    background: rgb(107 114 128);
-    font-weight: normal;
-}
-
-.ui-widget-header .ui-button {
-    width: 50px;
-    height: 50px;
-}
-
-
-.close-resize .ui-dialog-titlebar-close .ui-icon-closethick {
-  width: 50px !important;
-    height: 50px !important;
-
-}
- 
- 
-.ui-icon-closethick {
-  -ms-transform: scale(2); /* IE 9 */
-  -webkit-transform: scale(2); /* Chrome, Safari, Opera */
-  transform: scale(2);
-}
 
 .modal {
   width:100% !important;
@@ -259,17 +250,25 @@ pre[class*="language-"] {
 }
 
 .qheader {
-    background-color:#d3d3d3;
     padding: 2px;
     cursor: pointer;
     font-weight: bold;
-    background-color:  rgb(39 39 42);
-    color:rgb(161 161 170);
+    clear:both;
+    background-color: '#000';
+    color:'#fff';
+
 }
 #answer {
-    display: none;
+    display: block;
     padding : 5px;
 }
+.close-modal {
+  width: 50px !important;
+  height: 50px !important;
+  margin-top:10px;
+  margin-right:10px;
+}
+
       </style>
 
  
@@ -279,15 +278,20 @@ pre[class*="language-"] {
 <div id="fb-root"></div>
 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0&appId=1169474053825828" nonce="qRM9RQDb"></script>
 
+
+
+<div class="qheader"> <p style="font-size:50px;font-family:'Quicksand-SemiBold';">`
++
+currquery.substring(0,100)
++
+`<i class="fa fa-angle-down" style="float:right;" data-toggle="collapse" href="#collapse1" class="collapsed" aria-expanded="false"></i>
+</p></div><div>`+ currquery.substring(100,currquery.length) +`</div> 
+
+
 <div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'>
   <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
-&nbsp;<h2 class='display-2 fw-bold'>Answer</h2></div><br/>  
-
-<div class="qheader"> <p style="font-size:40px;">`+ question +`
-<i class="fa fa-angle-down" style="float:right;" data-toggle="collapse" href="#collapse1" class="collapsed" aria-expanded="false"></i>
-</p></div> 
- 
- <div id="answer" class="line-numbers">`;
+<h2 class='display-2 fw-bold'>&nbsp;Answer</h2></div>  
+<div id="answer" class="line-numbers"> `;
 
 
 if (answerContent === '') {
@@ -437,86 +441,41 @@ function shareOnFacebook() {
 }
 
 
-const lottieplayertag = () => {
 
-return `<dotlottie-player src="https://lottie.host/7e5fa803-37fa-49e7-b2ac-fb914ab89fb3/QOgqPILnK3.json" background="transparent" speed="1" style="width: 300px; height: 300px" direction="1" playMode="normal" loop autoplay></dotlottie-player>`;
-
-
-}
+useEffect(() => {
 
 
-const getStreamData2 = (myqry) => {
-  
-  //setQuery('');
-let newqry = myqry.replace("'",'');
-console.log('newqry',newqry);
+const createQueryHash2 = (qr) => {
+    const fullHash = CryptoJS.SHA256(qr).toString(CryptoJS.enc.Hex);
+    return fullHash.substring(0, 21);
+};
 
-    const injectScript = `
-    (async()=>{      
-      const postMessage = window.ReactNativeWebView.postMessage;     
-
-         const response = await fetch('http://192.168.100.83:5000/queryXdashApi', {
-          method: 'POST',
-          headers: {
-          'Content-Type': 'application/json',  
-          responseType: 'stream',
-         }, 
-      body:JSON.stringify({query: '${newqry}' })
-    });
-
-   async function *streamAsyncIterable(stream) {
-          const reader = stream.getReader()
-          try {
-              while (true) {
-                  const {done, value} = await reader.read()
-                  if (done) {
-                      return
-                  }
-                  yield value
-              }
-          } finally {
-              reader.releaseLock()
-          }
-      }
-  for await(const chunk of streamAsyncIterable(response?.body)) {
-          const str = new TextDecoder().decode(chunk);
-          alert('returnedFROMserver>>'+str);
-          setTimeout(function () {
-          window.ReactNativeWebView.postMessage(JSON.stringify({type: "updateHtml" ,query:'${newqry}' ,queryResponse : str}));         
-           }, 1000)
-      }
-
-    })();    
-    `;
-
-//window.ReactNativeWebView.postMessage
-
-    webViewRef?.current?.injectJavaScript(injectScript);
-    setQuery('');
-  //  webViewRef?.current?.reload();
-  };
+const queryXdashApi = async (myqry) => {
 
 
-
-const getStreamData = async (myqry) => {
-
-console.log('q pass==',myqry);
-let newqry = myqry?.replace("'",'');
-console.log('newqry',newqry);
-
-setQuestion(newqry);
+console.log('received request body-->',myqry);
 
 try {
+      
+        console.log('my query received is ',myqry);
 
-const response = await fetch('http://192.168.100.83:5000/queryXdashApi', { method: 'POST',
+let body = {
+              "query": myqry,
+            "search_uuid":createQueryHash2(myqry) ,    
+            "visitor_uuid": "bcd25493385e2512be48176f9e1a58ed"
+          };
+
+
+
+const response = await fetch('https://www.xdash.ai/api/query', { method: 'POST',
           headers: {
           'Content-Type': 'application/json',  
           responseType: 'stream',
          }, 
-      body:JSON.stringify({query: newqry }),
+      body:JSON.stringify(body),
       reactNative: { textStreaming: true } });
 
-
+console.log('mybody',body);
 /*
   .then(response => response.body)
   .then(stream => { res.write('mystream');})
@@ -524,28 +483,125 @@ const response = await fetch('http://192.168.100.83:5000/queryXdashApi', { metho
 
 const rbody = await response.text();
 
-console.log('FINAL-OUPUT',rbody);
 
- let aum = destr(rbody);
+//console.log('RESPONSE>>>',rbody);
+console.log('TYPEOF>>>', typeof rbody);
 
-        setRelatedContent(aum[2].text);
-        setSourcesContent(aum[1].text);
-        setAnswerContent(aum[0].text);
+       // setLoading(false);
+        let ltdata  = rbody.substring(0,rbody.indexOf('__LLM_RESPONSE__'));
+     //   console.log('MYSUSPECTDATA==',ltdata);
+        let dtarr = JSON.parse(ltdata);
+
+      //  console.log('SOURCES-ARRAY-->',dtarr)
+        //setResults2(dtarr); 
+        //setResults2Loaded(true);  
+
+    //    console.log('REPOSNSE',response.data);
+        
+        let ftdata  = rbody.substring(rbody.indexOf('__LLM_RESPONSE__')+16,rbody.indexOf('__RELATED_QUESTIONS__'));
+
+// ADD CODE TO REPLACE [[citation:x]] with appropriate graphic and inline text modal
+
+
+
+
+//add citation 
+
+       // setResults(ftdata); 
+       // setResultsLoaded(true);
+     //   console.log('LLM_RESPONSE-->',ftdata);
+
+        let rqdata = rbody.substring(rbody.indexOf('__RELATED_QUESTIONS__')+21,rbody.length); 
+        
+
+        let rqarr = JSON.parse(rqdata);
+        //setRelatedQuestions(rqarr);
+        //setRelatedQuestionsLoaded(true);
+     //   console.log('RELATED-QUESTIONS-ARRAY-->',rqarr);
+
+
+let hstr = md2.render(ftdata);  
+
+let cpstr = myqry + `\n\n`;
+
+cpstr += `***Answer***\n`
+        + ftdata +
+            `\n\n`;
+
+cpstr += sources_for_copy_paste(dtarr);
+
+//console.log('add-citation-markup',hstr);
+
+ let hstra = newSources(dtarr);
+
+ let hstrb = myRelatedQuestions(rqarr); 
+
+
+for (let x=0;x<dtarr.length;x++) {
+
+let cm = add_citation_markup(dtarr[x],x);
+
+
+let cm3 = `[[citation:`+(x+1)+`]]`;
+let cm5 = `[[Citation:`+(x+1)+`]]`;
+let cm2 = `[citation:`+(x+1)+`]`;
+let cm4 = `[Citation:`+(x+1)+`]`;
+
+
+hstr = hstr.replaceAll(cm3,cm); 
+hstr = hstr.replaceAll(cm5,cm); 
+hstr = hstr.replaceAll(cm2,cm); 
+hstr = hstr.replaceAll(cm4,cm); 
+
+
+}
+
+
+
+const resp = JSON.stringify([{type: 'answer',text: `${hstr}`},{type:'sources',text:`${hstra}`},{type:'related',text: `${hstrb}`}]);
+
+ setRelatedContent(hstrb);
+        setSourcesContent(hstra);
+        setAnswerContent(hstr);
 
 
 
 
 
-        origmarkRef.current = aum[3].text;
-        aum.splice(3, 1);
+        origmarkRef.current = cpstr;
+        
         setShowLoading(false);
-        console.log('saving history',aum);
-        saveHistoryItem(myqry,aum);
+        console.log('saving history...');
+        saveHistoryItem(myqry,resp);
+        setQuery('');
+
+     
+        } catch (error) {
+              console.error('Error fetching data: ', error);
+        }
+
+
+};
+
+const sources_for_copy_paste = (srcsarr) => {
+
+
+
+let sfcp = ``;
+
+for (let k=0;k<srcsarr.length;k++ ) {
+console.log('srcsarr-element--',srcsarr[k]);
+
+sfcp += `**Source-`+(k+1)+`**\n`
+       + srcsarr[k].name + `\n` 
+       + srcsarr[k].url + `\n`
+       + srcsarr[k].snippet + `\n\n\n`;
+
 
 }
-catch(e) {
-console.log('error while fetching data',e);
-}
+
+
+return sfcp;
 
 
 }
@@ -553,15 +609,127 @@ console.log('error while fetching data',e);
 
 
 
+const add_citation_markup = (mysrc,x) => {
+
+let rs = Math.random().toString(36).slice(2, 7);
 
 
-const testJsInject = () => {
+let cmr =  `<a class="btn" href="#`+rs+`" rel="modal:open" style="font-size:40px;text-decoration:none;width:50px;height:60px;border-radius:20px;background-color:orange;">&nbsp;`+x+`&nbsp;</a>
+
+<div id="`+rs+`" class="modal" style="width:100% !important;background-color:#000;">
+    
+          <p style="font-size:40px;color:rgb(212 212 216);font-family:Quicksand;">`+ mysrc.name +`</p>        
+   <a style="text-decoration:none;" href="`+ mysrc.url +`" target="_blank">
+   <p style="font-size:40px;color:rgb(212 212 216);font-family:Quicksand;" >`+ mysrc.snippet.substring(0,200) + 
+   
+
+   `</p><p><span style="font-size:40px;float:left;color:white;">`+ new URL(mysrc.url).hostname +`</span>  
+<span style="float:right;">   <img style="position:relative;float:right;margin-right:10px;" width="40px" height="40px" 
+ src="https://www.google.com/s2/favicons?domain=` + mysrc.url + `">
+</span></p><p>&nbsp;</p></a></div>`;
 
 
+
+return cmr;
+
+}
+
+ 
+
+
+
+
+
+
+const myRelatedQuestions = (relatedQuestions) => {
+
+let rqstr = '';
+
+  for (let index=0;index<relatedQuestions.length;index++) {
+        console.log('Inspect RQ string hree==',relatedQuestions[index].question);
+        rqstr += `<p>` + relatedQuestions[index].question + `</p><hr>`;
+  }   
+ //console.log('RQSTR=',rqstr);
+  return rqstr;
+};
+
+
+ const newSources = (results2) => {
+
+
+
+ let sstr = '<div class="ag-format-container"><div class="ag-courses_box">';
+for (let index=0;index<results2.length;index++) {
+
+//<a href="`+ results2[index].url +`" target="_blank" style="text-decoration: none">
+//</a>
+
+sstr += `<div class="ag-courses_item">
+      <a href="` + results2[index].url + `" target="_blank" class="ag-courses-item_link">
+               <div class="ag-courses-item_title">
+    ` + results2[index].name +`</div>
+<div class="ag-courses-item_date-box">
+   <img style="position:relative;float:right;margin-right:10px;" width="40px" height="40px" 
+ src="https://www.google.com/s2/favicons?domain=` + results2[index].url + `">
+          <span class="ag-courses-item_date">
+           `
+ + (index+1) + " - " + new URL(results2[index].url).hostname +` 
+          </span>
+        </div>
+      </a>
+    </div>`;
+console.log("Inspect string one",results2[index].url);
+console.log('Inspect string two',results2[index].name);
 
 }
 
 
+
+sstr += `</div></div>`;
+//console.log('SSTR=',sstr);
+return sstr;
+};
+
+
+const md2 = markdownit({
+    highlight(str, lang) {
+    let hl;
+//console.log('prism-langsfor jsx==',Prism.languages['javascript']);
+    // data-line="2"
+    //lang !== 'markdown' &&
+    try {
+      if ( !(lang === 'undefined')   || (lang !== 'markdown')) {
+        if(lang === 'jsx')  lang = 'javascript';
+        if(lang === 'undefined') lang = 'javascript';
+        if (lang === 'null') lang = 'javascript';
+      hl = Prism.highlight(str, Prism.languages[lang]);
+      }
+    } catch (error) {
+      console.error(error);
+      hl = md2.utils.escapeHtml(str);
+    }
+//console.log('transformed markdown==',hl);
+//console.log('language passed',lang); language-${lang}
+    return `<pre style="white-space:pre-wrap !important;" data-line="1" class="line-numbers"><code style="white-space:pre-wrap !important;" class="language-${lang}">${hl}</code></pre>`;
+  },
+  typographer:true,
+});
+
+
+
+queryXdashApi(currquery);
+
+setHtmlStringLoaded(true);
+}, [currquery])
+
+
+
+const lottieplayertag = () => {
+
+return `<dotlottie-player src="https://lottie.host/7e5fa803-37fa-49e7-b2ac-fb914ab89fb3/QOgqPILnK3.json" background="transparent" speed="1" style="width: 300px; height: 300px" direction="1" playMode="normal" loop autoplay></dotlottie-player>`;
+
+
+}
 
 
  function LoadingIndicatorView() {
@@ -593,7 +761,7 @@ const startAnimation2 = toValue => {
     }
     const translateY = animatedValue.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, Dimensions.get('window').height - 175],
+        outputRange: [0, Dimensions.get('window').height - 255],
         extrapolate: 'clamp'
     })
 
@@ -623,9 +791,6 @@ setTopThreeLoaded(true);
 
 }, [])
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
  const handleMessage = useCallback((event: WebViewMessageEvent) => {
     const { data } = event.nativeEvent;
 
@@ -699,14 +864,13 @@ const saveHistoryItem = (q,qr) => {
  const handleParagraphClick = (text) => {
     // Function to handle the paragraph click
     //console.log('Paragraph clicked', `Text: ${text}`);
-       setAnswerContent('');setSourcesContent('');setRelatedContent('');
+       setAnswerContent('');setSourcesContent('');
+       setRelatedContent('');
     setLoading(false);
     setHtmlStringLoaded(true);
     let newq = text.replace("'",'') ;
-    setQuery(newq); 
-    //console.log('newq=',newq);
-    sleep(800).then(() => { getStreamData(newq); });
-  //  webViewRef?.current.reload();
+    setCurrQuery(newq); 
+    
   };
 
  const injectedJavaScript =  `(
@@ -730,11 +894,13 @@ function() {
     })();
   `;
      
-
-
+//startAnimation(isTop ? 1 : 0);
+//renderLoading={() => {  displaySpinner(); }}
+//startAnimation(isTop ? 1 : 0);
+//onFocus={() => startAnimation2(isTop ? 1 : 0)}   Dimensions.get('window').height
 function displaySpinner() {
   return (
-     <View style={styles.indicatorWrapper}>
+     <View style={[styles.indicatorWrapper,{marginTop:-1000,flex:1,flexGrow:1,height:600} ]}>
       <ActivityIndicator size="large" style={styles.indicator}/>
       <Text style={styles.indicatorText}>Loading response...</Text>
     </View>
@@ -742,22 +908,58 @@ function displaySpinner() {
 }
 
 
-  return (
-   <View style={{flex:1,display:'flex',height:Dimensions.get('window').height+100}} >
-
-<View style={{backgroundColor:'#000',height:clicked?35:'30%'}} >
-<MenuIcon onPress={()=> navigation.openDrawer() } style={{position:'absolute',left:7,top:10, width: 22, height: 22,marginLeft:10,marginTop:8}} />  
-</View>
-
-   	 <View style={{paddingTop:30,display:'flex',flexDirection:'row',justifyContent:'center',alignSelf:'center',paddingTop:10,paddingBottom:5,backgroundColor:'black',width:'100%'}} >
-<Text style={{marginBottom:4,textAlign:'center',alignSelf:'center',color:'white',fontSize:23,fontFamily:'Quicksand-SemiBold'}} >xdash ai</Text>
+/*
+<View style={{backgroundColor:'#000',width: 24}} >
+<MenuIcon onPress={()=> navigation.openDrawer() } style={{height: 24,marginLeft:10,marginTop:8}} />  
 </View>
 
 <View style={{backgroundColor:'#000'}} >
-<Text style={{marginBottom:10,textAlign:'center',alignSelf:'center',color:'white',fontSize:16,fontFamily:'Quicksand-Light'}} >Optimize Your Productivity & Time</Text>
+
+<Text style={{marginBottom:10,textAlign:'center',alignSelf:'center',color:'white',fontSize:19,fontFamily:'Quicksand-SemiBold'}} >Optimize Your Productivity & Time</Text>
 </View>  
 
-      <Animated.View style={[styles.searchContainer,{ transform: [{ translateY }] }]}>
+{htmlStringLoaded? (
+):displaySpinner() }
+
+*/
+
+  return (
+   <View style={{flex:1,display:'flex',backgroundColor:'black',height:Dimensions.get('window').height}} >
+
+   	 <View style={{marginTop:0 ,paddingTop:0,display:'flex',flexDirection:'row',justifyContent:'center',alignSelf:'flex-start',paddingTop:10,paddingBottom:5,backgroundColor:'black',width:'100%'}} >
+<MenuIcon onPress={()=> navigation.openDrawer() } style={{backgroundColor:'black',color:'black',position:'absolute',width:22,left:10,top:10, height: 22}} />  
+<View style={{width:150,backgroundColor:'black',alignSelf:'center',marginTop:-12}} >
+  <Text style={{marginBottom:4,textAlign:'center',color:'white',fontSize:26,fontFamily:'Quicksand-SemiBold'}} >xdash.ai</Text>
+</View>
+</View>
+
+
+<View style={{flex:1,backgroundColor:'black',marginTop:-4,marginBottom:-30}} >
+
+
+
+<WebView  ref={(ref) => webViewRef.current = ref}
+          originWhitelist={['*']}
+          source={{ html: loadHtml() }}
+            scalesPageToFit={true}
+            injectedJavaScript={injectedJavaScript}             
+         onMessage={handleMessage}
+         startInLoadingState={true}
+         renderLoading={() => {
+        return displaySpinner();
+      }}
+         javaScriptEnabled={true}
+         allowFileAccess={true}         
+          domStorageEnabled={true}
+          style={{flexGrow:1,height:600,marginTop:0,paddingTop:5,marginBottom:40,fontSize:15}}        
+></WebView>
+
+
+     
+ </View>
+
+
+  <KeyboardAvoidingView style={[styles.searchContainer]} keyboardVerticalOffset={80} >
  
 
         <TextInput placeholderTextColor={'#7e7979'}
@@ -765,59 +967,24 @@ function displaySpinner() {
           placeholder="Ask XDash AI anything..."
           value={query}
           id='myQuery'
-          onChangeText={setQuery}
-          onFocus={() => startAnimation2(isTop ? 0 : 1)}
+          onChangeText={setQuery}          
         />
         <TouchableOpacity style={{width:50,xIndex:190,height:50,borderRadius:25,color:'white',borderWidth:1,
         justifyContent:'center',alignItems:'center' ,borderColor:'#5e5b5b',backgroundColor:'black'}}
-          onPress={() => { setAnswerContent('');setSourcesContent('');setRelatedContent('');   loadHtml(); setHtmlStringLoaded(true);setLoading(false); startAnimation(isTop ? 1 : 0); sleep(300).then(() => { getStreamData(query); }); setClicked(true);Keyboard.dismiss(); } } >
+          onPress={() => { setAnswerContent('');setSourcesContent('');setRelatedContent('');   loadHtml(); setHtmlStringLoaded(true);setLoading(false); setCurrQuery(query); setClicked(true);Keyboard.dismiss(); } } >
 
           <SvgArrowRight style={{width: 24, zIndex:90,height: 24,color:'white'}} />
         
         </TouchableOpacity>
         
-      </Animated.View>
-    
-
-             
-
-{ topthreeloaded && !clicked &&
-<View style={[styles.mainViewStyle, styles.pullLower]} >
-
-
-{(topthreeloaded && !clicked) && topthree.map((item, index) => { 
-          return (
-<TouchableOpacity onPress={()=> {setShowLoading(true); setHtmlStringLoaded(true); startAnimation(isTop ? 1 : 0);setClicked(true);setLoading(true);sleep(800).then(() => { getStreamData(item.querytext); }); }} style={{borderWidth:1,alignSelf:'center',borderColor:'#5e5b5b',borderRadius:15,padding:5,marginBottom:5,}} key={index} >
-  <Text style={{fontSize:13,color:'#7e7979',fontFamily:'Quicksand-SemiBold'}} >{item.querytext}</Text>
-</TouchableOpacity>
-        )})}
+      </KeyboardAvoidingView>
 
 
 
 </View>
-}
 
-<View style={{flex:1,marginTop:-73,marginBottom:-70}} >
-{ htmlStringLoaded && (
 
-<WebView  ref={(ref) => webViewRef.current = ref}
-          originWhitelist={['*']}
-          source={{ html: loadHtml() }}
-            scalesPageToFit={true}
-            startInLoadingState={true}
-            injectedJavaScript={injectedJavaScript}             
-         onMessage={handleMessage}
-         javaScriptEnabled={true}
-         allowFileAccess={true}
-         renderLoading={() => {  displaySpinner(); }}
-          domStorageEnabled={true}
-          style={{flexGrow:1,width:Dimensions.get('window').width,height:Dimensions.get('window').height,marginTop:2,paddingTop:5,marginBottom:100,fontSize:15}}        
-></WebView>
 
-        )}
-     
- </View>
-</View>
 
   );
 };
@@ -866,18 +1033,19 @@ const styles = StyleSheet.create({
     zIndex:90,
     alignItems: 'center',
     paddingBottom: 10,
-    backgroundColor:'#000000',
+    backgroundColor:'#000000'
   },
   bgTransparent:{
     backgroundColor:'transparent',
   },
 mainViewStyle: {
-
 display:'flex',
 backgroundColor:'#000000',
 color:'#ffffff',
-justifyContent:'center',
-alignItems:'center',
+justifyContent:'flex-start',
+alignSelf:'flex-start',
+width:Dimensions.get('window').width,
+alignItems:'flex-start',
 paddingTop:10,
 paddingBottom:10
 },
@@ -942,6 +1110,7 @@ alignSelf:'flex-start',justifyContent:'flex-start',marginLeft: 'auto'},
     justifyContent: 'center',
     backgroundColor: '#000',
     marginTop:-57,
+    height:Dimensions.get('window').height,
   },
   indicator: {},
   indicatorText: {

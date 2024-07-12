@@ -101,7 +101,7 @@ async function clearStore() {
 
 
 
-
+//<Bullet style={{width: 15, height: 15,color:'white'}} />
 
 
 //<AiLogo style={{alignSelf:'center',width: 75, zIndex:90,height: 75,color:'white'}} />
@@ -132,11 +132,11 @@ async function clearStore() {
             return (
               <TouchableOpacity 
  onPress={()=>{navigation.navigate('History',rtpms);}} 
-                key={idx} style={{backgroundColor:(idx%2===0)?'rgb(30 41 59)':'rgb(100 116 139)',marginLeft:10,marginBottom:5,flexDirection:'row',width:'100%',flexDirection:'column'}} >
+                key={idx} style={{backgroundColor:(idx%2===0)?'rgb(30 41 59)':'#000',marginLeft:10,marginBottom:5,flexDirection:'row',width:'100%',flexDirection:'column'}} >
                 
-                <Text style={{fontSize:18,lineHeight:30,color:'white',fontFamily:'Quicksand-Light'}}>
+                <Text style={{fontSize:18,lineHeight:30,color:'white',fontFamily:'Quicksand-SemiBold'}}>
 
-<Bullet style={{width: 15, height: 15,color:'white'}} />
+
                   {obj.query}</Text>
               </TouchableOpacity>
             );
