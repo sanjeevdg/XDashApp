@@ -95,6 +95,7 @@ let myhstr =`<!DOCTYPE html>
   <head>
     
      <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+     <link rel="stylesheet" href="https://sanjeevdg.github.io/tailwind.css">
    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 <script src="https://use.fontawesome.com/c6435311fd.js"></script>
@@ -269,6 +270,10 @@ pre[class*="language-"] {
   margin-right:10px;
 }
 
+#mysourcesdiv {
+
+  font-size: 150%;
+}
       </style>
 
  
@@ -282,10 +287,10 @@ pre[class*="language-"] {
 
 <div class="qheader"> <p style="font-size:50px;font-family:'Quicksand-SemiBold';">`
 +
-currquery.substring(0,100)
+currquery.substring(0,40)
 +
 `<i class="fa fa-angle-down" style="float:right;" data-toggle="collapse" href="#collapse1" class="collapsed" aria-expanded="false"></i>
-</p></div><div>`+ currquery.substring(100,currquery.length) +`</div> 
+</p></div><div class="qheadertext"><p style="font-size:50px;font-family:'Quicksand-SemiBold';">`+ currquery.substring(40,currquery.length) +`</p></div> 
 
 
 <div style='margin-left:10px;justify-content:flex-start;align-items:center;display:flex;flex-direction:row;width:100%;height:70px;'>
@@ -391,6 +396,8 @@ $( document ).ready(function() {
 
 
   });
+
+$(".qheadertext").hide();
 
 $(".qheader").click(function () {
 
@@ -658,13 +665,29 @@ let rqstr = '';
 
 
 
- let sstr = '<div class="ag-format-container"><div class="ag-courses_box">';
+ let sstr = '<div id="mysourcesdiv" class="grid grid-cols-2 sm:grid-cols-1 gap-2">';
 for (let index=0;index<results2.length;index++) {
 
 //<a href="`+ results2[index].url +`" target="_blank" style="text-decoration: none">
 //</a>
 
-sstr += `<div class="ag-courses_item">
+sstr += `<div style="font-size:30px;height:120px;width:99%;float:center;" class="relative text-xs py-2 px-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg flex flex-col 
+  gap-2"><a href="` + results2[index].url + `" target="_blank" 
+  class="absolute inset-0"></a><div style="word-wrap: break-word;text-wrap:wrap;" class="text-md text-white text-ellipsis overflow-hidden 
+  whitespace-pre-wrap break-words">` + results2[index].name +`</div><div class="flex 
+  gap-2 items-center"><div class="flex-1 overflow-hidden"><div style="font-size:30px;" class="text-ellipsis 
+  whitespace-nowrap break-all text-zinc-400 overflow-hidden w-full">` + (index+1) + " - " + new URL(results2[index].url).hostname +`</div>
+</div><div class="flex-none flex items-center"><img style="scale:2;" class="h-3 w-3" alt="react.dev" 
+src="https://www.google.com/s2/favicons?domain=` + results2[index].url + `"></div></div></div>`;
+console.log("Inspect string one",results2[index].url);
+console.log('Inspect string two',results2[index].name);
+
+}
+
+
+/*
+
+<div class="ag-courses_item">
       <a href="` + results2[index].url + `" target="_blank" class="ag-courses-item_link">
                <div class="ag-courses-item_title">
     ` + results2[index].name +`</div>
@@ -677,15 +700,17 @@ sstr += `<div class="ag-courses_item">
           </span>
         </div>
       </a>
-    </div>`;
-console.log("Inspect string one",results2[index].url);
-console.log('Inspect string two',results2[index].name);
+    </div>
 
-}
+*/
 
 
 
-sstr += `</div></div>`;
+
+
+
+
+sstr += `</div>`;
 //console.log('SSTR=',sstr);
 return sstr;
 };
